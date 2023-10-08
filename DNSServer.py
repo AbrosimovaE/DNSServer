@@ -81,7 +81,7 @@ dns_records = {
 
 def run_dns_server():
     # Create a UDP socket and bind it to the local IP address and port (the standard port for DNS)
-    server_socket = socket.socket(socket.AF_INET, ????) # Research this
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Research this
     server_socket.bind(('127.0.0.1', 53))
 
     while True:
@@ -94,7 +94,7 @@ def run_dns_server():
             response = dns.message.make_response(request)
 
             # Get the question from the request
-            question = request.question[???]
+            question = request.question[0]
             qname = question.name.to_text()
             qtype = question.rdtype
 
@@ -105,12 +105,12 @@ def run_dns_server():
 
                 rdata_list = []
 
-                if qtype == dns.rdatatype.??:
+                if qtype == dns.rdatatype.MX:
                     for pref, server in answer_data:
                         rdata_list.append(MX(dns.rdataclass.IN, dns.rdatatype.MX, pref, server))
-                elif qtype == dns.rdatatype.??:
-                    ??, ??, ??, ??, ??, ??, ?? = answer_data # What is the record format? See dns_records dictionary. Assume we handle @, Class, TTL elsewhere. Do some research on SOA Records
-                    rdata = SOA(dns.rdataclass.IN, dns.rdatatype.SOA, ??, ??, ??, ??, ??, ??, ??) # follow format from previous line
+                elif qtype == dns.rdatatype.SOA:
+                    mname, rname, serial, refresh, retry, expire, minimum = answer_data # What is the record format? See dns_records dictionary. Assume we handle @, Class, TTL elsewhere. Do some research on SOA Records
+                    rdata = SOA(dns.rdataclass.IN, dns.rdatatype.SOA, mname, rname, serial, refresh, retry, expire, minimum) # follow format from previous line
                     rdata_list.append(rdata)
                 else:
                     if isinstance(answer_data, str):
@@ -126,7 +126,7 @@ def run_dns_server():
 
             # Send the response back to the client using the `server_socket.sendto` method and put the response to_wire(), return to the addr you received from
             print("Responding to request:", qname)
-            server_socket.??????? 
+            server_socket.sendto(response.to_wire(), addr) 
         except KeyboardInterrupt:
             print('\nExiting...')
             server_socket.close()
